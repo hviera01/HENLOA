@@ -11,7 +11,8 @@ import '../../data/repositories/evaluaciones_repository.dart';
 import '../../data/repositories/items_repository.dart';
 
 class ProgresoScreen extends StatefulWidget {
-  const ProgresoScreen({super.key});
+  final VoidCallback onVolver;
+  const ProgresoScreen({super.key, required this.onVolver});
 
   @override
   State<ProgresoScreen> createState() => _ProgresoScreenState();
@@ -25,14 +26,20 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
     final session = SessionScope.of(context);
     final yo = session.usuarioActual!;
     final pareja = session.parejaActual!;
-    final evaluadoActual = _tab == 0 ? yo : pareja;
-    final autorListaActual = _tab == 0 ? pareja : yo;
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-          child: Text('Progreso', style: Theme.of(context).textTheme.headlineMedium),
+          padding: const EdgeInsets.fromLTRB(8, 20, 20, 12),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: widget.onVolver,
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+              Text('Progreso', style: Theme.of(context).textTheme.headlineMedium),
+            ],
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -59,10 +66,15 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
           ),
         ),
         Expanded(
-          child: _ContenidoProgreso(
-            key: ValueKey(_tab),
-            evaluadoPor: evaluadoActual,
-            autorLista: autorListaActual,
+          // IndexedStack: mantiene las dos pestañas montadas para no perder
+          // la suscripción a Firestore (y volver a "cargando") al alternar.
+          child: IndexedStack(
+            sizing: StackFit.expand,
+            index: _tab,
+            children: [
+              _ContenidoProgreso(evaluadoPor: yo, autorLista: pareja),
+              _ContenidoProgreso(evaluadoPor: pareja, autorLista: yo),
+            ],
           ),
         ),
       ],
@@ -108,25 +120,44 @@ class _ChipTab extends StatelessWidget {
   }
 }
 
-class _ContenidoProgreso extends StatelessWidget {
+class _ContenidoProgreso extends StatefulWidget {
   final String evaluadoPor;
   final String autorLista;
-  const _ContenidoProgreso({super.key, required this.evaluadoPor, required this.autorLista});
+  const _ContenidoProgreso({required this.evaluadoPor, required this.autorLista});
+
+  @override
+  State<_ContenidoProgreso> createState() => _ContenidoProgresoState();
+}
+
+class _ContenidoProgresoState extends State<_ContenidoProgreso> {
+  late final Stream<List<ItemLista>> _itemsStream;
+  late final Stream<List<Evaluacion>> _evalStream;
+  late final String _semanaId;
+
+  @override
+  void initState() {
+    super.initState();
+    _semanaId = SemanaUtils.idSemanaActual();
+    _itemsStream = ItemsRepository().observarListaDe(widget.autorLista);
+    _evalStream = EvaluacionesRepository().observarPorSemanaYEvaluador(
+      _semanaId,
+      widget.evaluadoPor,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final itemsRepo = ItemsRepository();
-    final evalRepo = EvaluacionesRepository();
-    final semanaId = SemanaUtils.idSemanaActual();
+    final evaluadoPor = widget.evaluadoPor;
+    final semanaId = _semanaId;
 
     return StreamBuilder<List<ItemLista>>(
-      stream: itemsRepo.observarListaDe(autorLista),
+      stream: _itemsStream,
       builder: (context, itemsSnap) {
         final items = {
           for (final i in (itemsSnap.data ?? [])) i.id: i,
         };
         return StreamBuilder<List<Evaluacion>>(
-          stream: evalRepo.observarPorSemanaYEvaluador(semanaId, evaluadoPor),
+          stream: _evalStream,
           builder: (context, evalSnap) {
             final evals = evalSnap.data ?? [];
             final promedio = evals.isEmpty
@@ -242,16 +273,29 @@ class _TarjetaPromedio extends StatelessWidget {
   }
 }
 
-class _HistorialSemanal extends StatelessWidget {
+class _HistorialSemanal extends StatefulWidget {
   final String evaluadoPor;
   final String semanaActualId;
   const _HistorialSemanal({required this.evaluadoPor, required this.semanaActualId});
 
   @override
+  State<_HistorialSemanal> createState() => _HistorialSemanalState();
+}
+
+class _HistorialSemanalState extends State<_HistorialSemanal> {
+  late final Future<List<MapEntry<String, List<Evaluacion>>>> _historial;
+
+  @override
+  void initState() {
+    super.initState();
+    _historial = EvaluacionesRepository().historialPorEvaluador(widget.evaluadoPor);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final evalRepo = EvaluacionesRepository();
+    final semanaActualId = widget.semanaActualId;
     return FutureBuilder<List<MapEntry<String, List<Evaluacion>>>>(
-      future: evalRepo.historialPorEvaluador(evaluadoPor),
+      future: _historial,
       builder: (context, snap) {
         final semanas = (snap.data ?? [])
             .where((e) => e.key != semanaActualId)

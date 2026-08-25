@@ -7,7 +7,8 @@ import '../../data/models/deseo.dart';
 import '../../data/repositories/deseos_repository.dart';
 
 class DeseosScreen extends StatefulWidget {
-  const DeseosScreen({super.key});
+  final VoidCallback onVolver;
+  const DeseosScreen({super.key, required this.onVolver});
 
   @override
   State<DeseosScreen> createState() => _DeseosScreenState();
@@ -16,6 +17,21 @@ class DeseosScreen extends StatefulWidget {
 class _DeseosScreenState extends State<DeseosScreen> {
   int _tab = 0;
   final _repo = DeseosRepository();
+  Stream<List<Deseo>>? _misDeseosStream;
+  Stream<List<Deseo>>? _deseosParejaStream;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Streams creados una sola vez (no en build) para no perder la
+    // suscripción — y volver a "cargando" — cada vez que la pantalla se
+    // reconstruye.
+    if (_misDeseosStream == null) {
+      final session = SessionScope.of(context);
+      _misDeseosStream = _repo.observarDe(session.usuarioActual!);
+      _deseosParejaStream = _repo.observarDe(session.parejaActual!);
+    }
+  }
 
   Future<void> _agregar(String autorId) async {
     final controlador = TextEditingController();
@@ -50,14 +66,21 @@ class _DeseosScreenState extends State<DeseosScreen> {
     final session = SessionScope.of(context);
     final yo = session.usuarioActual!;
     final pareja = session.parejaActual!;
-    final autorMostrado = _tab == 0 ? yo : pareja;
     final esMio = _tab == 0;
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-          child: Text('Deseos y antojos', style: Theme.of(context).textTheme.headlineMedium),
+          padding: const EdgeInsets.fromLTRB(8, 20, 20, 12),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: widget.onVolver,
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+              Text('Deseos y antojos', style: Theme.of(context).textTheme.headlineMedium),
+            ],
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -84,7 +107,7 @@ class _DeseosScreenState extends State<DeseosScreen> {
         const SizedBox(height: 16),
         Expanded(
           child: StreamBuilder<List<Deseo>>(
-            stream: _repo.observarDe(autorMostrado),
+            stream: esMio ? _misDeseosStream : _deseosParejaStream,
             builder: (context, snap) {
               final deseos = snap.data ?? [];
               return Stack(

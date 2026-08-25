@@ -49,41 +49,43 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final anchoTeclado = constraints.maxWidth < 340
+                ? constraints.maxWidth - 40
+                : 300.0;
             return SingleChildScrollView(
-              child: ConstrainedBox(
+              child: Container(
+                alignment: Alignment.center,
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      const Spacer(),
-                      _Cabecera(),
-                      const SizedBox(height: 40),
-                      _PuntosCodigo(longitud: _codigo.length, error: _error),
-                      const SizedBox(height: 10),
-                      AnimatedOpacity(
-                        opacity: _error ? 1 : 0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Text(
-                          'Código incorrecto, probá de nuevo',
-                          style: TextStyle(
-                            color: AppColors.rangoMalo,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _Cabecera(),
+                    const SizedBox(height: 40),
+                    _PuntosCodigo(longitud: _codigo.length, error: _error),
+                    const SizedBox(height: 10),
+                    AnimatedOpacity(
+                      opacity: _error ? 1 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Text(
+                        'Código incorrecto, probá de nuevo',
+                        style: TextStyle(
+                          color: AppColors.rangoMalo,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 28),
-                      SizedBox(
-                        width: 300,
-                        child: _Teclado(
-                          habilitado: !_verificando,
-                          onDigito: _agregarDigito,
-                          onBorrar: _borrar,
-                        ),
+                    ),
+                    const SizedBox(height: 28),
+                    SizedBox(
+                      width: anchoTeclado,
+                      child: _Teclado(
+                        habilitado: !_verificando,
+                        onDigito: _agregarDigito,
+                        onBorrar: _borrar,
                       ),
-                      const Spacer(),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -100,14 +102,15 @@ class _Cabecera extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 64,
-          height: 64,
+          width: 68,
+          height: 68,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
+            color: AppColors.terracota.withValues(alpha: 0.08),
             border: Border.all(color: AppColors.trazo, width: 1.4),
           ),
           child: Center(
-            child: CustomPaint(size: const Size(30, 26), painter: _NudoPainter()),
+            child: CustomPaint(size: const Size(32, 29), painter: _CorazonPainter()),
           ),
         ),
         const SizedBox(height: 20),
@@ -138,45 +141,39 @@ class _Cabecera extends StatelessWidget {
   }
 }
 
-/// Dos trazos entrelazados, como un nudo simple — evita el clásico corazón
-/// genérico de IA.
-class _NudoPainter extends CustomPainter {
+/// Corazón dibujado a mano (bezier), con degradado terracota→vino y un
+/// brillito sutil — evita el corazón plano y genérico de ícono de sistema.
+class _CorazonPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final p1 = Paint()
-      ..color = AppColors.terracota
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.6
-      ..strokeCap = StrokeCap.round;
-    final p2 = Paint()
-      ..color = AppColors.vino
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.6
-      ..strokeCap = StrokeCap.round;
+    final w = size.width;
+    final h = size.height;
+    final path = Path()
+      ..moveTo(w * 0.5, h * 0.94)
+      ..cubicTo(w * -0.12, h * 0.52, w * 0.08, h * 0.02, w * 0.5, h * 0.26)
+      ..cubicTo(w * 0.92, h * 0.02, w * 1.12, h * 0.52, w * 0.5, h * 0.94)
+      ..close();
 
-    final path1 = Path()
-      ..moveTo(0, size.height * 0.75)
-      ..cubicTo(
-        size.width * 0.15,
-        0,
-        size.width * 0.55,
-        size.height,
-        size.width * 0.7,
-        size.height * 0.3,
-      );
-    final path2 = Path()
-      ..moveTo(size.width * 0.3, size.height * 0.7)
-      ..cubicTo(
-        size.width * 0.45,
-        size.height * 1.3,
-        size.width * 0.85,
-        size.height,
-        size.width,
-        size.height * 0.25,
-      );
+    final relleno = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [AppColors.terracota, AppColors.vino],
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+    canvas.drawPath(path, relleno);
 
-    canvas.drawPath(path1, p1);
-    canvas.drawPath(path2, p2);
+    final brillo = Paint()
+      ..color = Colors.white.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.07
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromLTWH(w * 0.1, h * 0.06, w * 0.34, h * 0.34),
+      3.6,
+      1.7,
+      false,
+      brillo,
+    );
   }
 
   @override

@@ -58,14 +58,15 @@ class _MiListaTabState extends State<MiListaTab> {
                       ),
                     ),
                   ),
-                ...items.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+                ...items.asMap().entries.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: _FilaItem(
-                      item: item,
-                      onEditar: () => _editar(item),
-                      onActivar: (v) => _repo.cambiarActivo(item.id, v),
-                      onEliminar: () => _repo.eliminar(item.id),
+                      numero: entry.key + 1,
+                      item: entry.value,
+                      onEditar: () => _editar(entry.value),
+                      onActivar: (v) => _repo.cambiarActivo(entry.value.id, v),
+                      onEliminar: () => _repo.eliminar(entry.value.id),
                     ),
                   ),
                 ),
@@ -88,12 +89,14 @@ class _MiListaTabState extends State<MiListaTab> {
 }
 
 class _FilaItem extends StatelessWidget {
+  final int numero;
   final ItemLista item;
   final VoidCallback onEditar;
   final ValueChanged<bool> onActivar;
   final VoidCallback onEliminar;
 
   const _FilaItem({
+    required this.numero,
     required this.item,
     required this.onEditar,
     required this.onActivar,
@@ -102,45 +105,80 @@ class _FilaItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.tarjeta,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.trazo),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: onEditar,
-              child: Text(
-                item.texto,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: item.activo ? AppColors.tintaFuerte : AppColors.tintaSuave,
-                  decoration: item.activo ? null : TextDecoration.lineThrough,
+    final activo = item.activo;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onEditar,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(6, 14, 8, 14),
+          decoration: BoxDecoration(
+            color: AppColors.tarjeta,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.trazo),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(width: 8),
+              Container(
+                width: 30,
+                height: 30,
+                margin: const EdgeInsets.only(top: 1),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: activo
+                      ? AppColors.terracota.withValues(alpha: 0.12)
+                      : AppColors.trazo.withValues(alpha: 0.5),
+                ),
+                child: activo
+                    ? Text(
+                        numero.toString().padLeft(2, '0'),
+                        style: const TextStyle(
+                          color: AppColors.terracota,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11.5,
+                        ),
+                      )
+                    : const Icon(Icons.pause_rounded, size: 15, color: AppColors.tintaSuave),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    item.texto,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      height: 1.35,
+                      color: activo ? AppColors.tintaFuerte : AppColors.tintaSuave,
+                      decoration: activo ? null : TextDecoration.lineThrough,
+                      decorationColor: AppColors.tintaSuave,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_horiz_rounded, color: AppColors.tintaSuave),
-            onSelected: (v) {
-              if (v == 'editar') onEditar();
-              if (v == 'activar') onActivar(!item.activo);
-              if (v == 'eliminar') onEliminar();
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'editar', child: Text('Editar')),
-              PopupMenuItem(
-                value: 'activar',
-                child: Text(item.activo ? 'Pausar' : 'Reactivar'),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_horiz_rounded, color: AppColors.tintaSuave, size: 20),
+                onSelected: (v) {
+                  if (v == 'editar') onEditar();
+                  if (v == 'activar') onActivar(!activo);
+                  if (v == 'eliminar') onEliminar();
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'editar', child: Text('Editar')),
+                  PopupMenuItem(
+                    value: 'activar',
+                    child: Text(activo ? 'Pausar' : 'Reactivar'),
+                  ),
+                  const PopupMenuItem(value: 'eliminar', child: Text('Eliminar')),
+                ],
               ),
-              const PopupMenuItem(value: 'eliminar', child: Text('Eliminar')),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

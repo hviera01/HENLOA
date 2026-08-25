@@ -9,7 +9,8 @@ import '../../data/repositories/cartas_repository.dart';
 import 'carta_pdf.dart';
 
 class BuzonScreen extends StatefulWidget {
-  const BuzonScreen({super.key});
+  final VoidCallback onVolver;
+  const BuzonScreen({super.key, required this.onVolver});
 
   @override
   State<BuzonScreen> createState() => _BuzonScreenState();
@@ -18,6 +19,21 @@ class BuzonScreen extends StatefulWidget {
 class _BuzonScreenState extends State<BuzonScreen> {
   int _tab = 0;
   final _repo = CartasRepository();
+  Stream<List<Carta>>? _recibidasStream;
+  Stream<List<Carta>>? _enviadasStream;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Streams creados una sola vez (no en build) para no perder la
+    // suscripción — y volver a "cargando" — cada vez que la pantalla se
+    // reconstruye.
+    if (_recibidasStream == null) {
+      final yo = SessionScope.of(context).usuarioActual!;
+      _recibidasStream = _repo.observarRecibidasPor(yo);
+      _enviadasStream = _repo.observarEnviadasPor(yo);
+    }
+  }
 
   Future<void> _escribirCarta(String autorId, String destinatarioId) async {
     await Navigator.of(context).push(
@@ -52,11 +68,16 @@ class _BuzonScreenState extends State<BuzonScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+          padding: const EdgeInsets.fromLTRB(8, 20, 20, 12),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Buzón', style: Theme.of(context).textTheme.headlineMedium),
+              IconButton(
+                onPressed: widget.onVolver,
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+              Expanded(
+                child: Text('Buzón', style: Theme.of(context).textTheme.headlineMedium),
+              ),
               FilledButton.icon(
                 onPressed: () => _escribirCarta(yo, pareja),
                 icon: const Icon(Icons.edit_rounded, size: 18),
@@ -93,7 +114,7 @@ class _BuzonScreenState extends State<BuzonScreen> {
         const SizedBox(height: 16),
         Expanded(
           child: StreamBuilder<List<Carta>>(
-            stream: _tab == 0 ? _repo.observarRecibidasPor(yo) : _repo.observarEnviadasPor(yo),
+            stream: _tab == 0 ? _recibidasStream : _enviadasStream,
             builder: (context, snap) {
               final cartas = snap.data ?? [];
               if (cartas.isEmpty && snap.connectionState != ConnectionState.waiting) {

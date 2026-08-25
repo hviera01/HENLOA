@@ -6,14 +6,29 @@ import 'mi_lista_tab.dart';
 import 'evaluarme_tab.dart';
 
 class NuestraListaScreen extends StatefulWidget {
-  const NuestraListaScreen({super.key});
+  final int tabInicial;
+  final VoidCallback onVolver;
+
+  const NuestraListaScreen({
+    super.key,
+    this.tabInicial = 0,
+    required this.onVolver,
+  });
 
   @override
   State<NuestraListaScreen> createState() => _NuestraListaScreenState();
 }
 
 class _NuestraListaScreenState extends State<NuestraListaScreen> {
-  int _tab = 0;
+  late int _tab = widget.tabInicial;
+
+  @override
+  void didUpdateWidget(covariant NuestraListaScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.tabInicial != oldWidget.tabInicial) {
+      setState(() => _tab = widget.tabInicial);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,10 +39,13 @@ class _NuestraListaScreenState extends State<NuestraListaScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+          padding: const EdgeInsets.fromLTRB(8, 20, 20, 12),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              IconButton(
+                onPressed: widget.onVolver,
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
               Text('Nuestra lista', style: Theme.of(context).textTheme.headlineMedium),
             ],
           ),
@@ -42,9 +60,16 @@ class _NuestraListaScreenState extends State<NuestraListaScreen> {
         ),
         const SizedBox(height: 16),
         Expanded(
-          child: _tab == 0
-              ? MiListaTab(usuarioId: yo)
-              : EvaluarmeTab(yo: yo, pareja: pareja),
+          // IndexedStack: mantiene ambas pestañas montadas para no perder
+          // la suscripción a Firestore (y volver a "cargando") al alternar.
+          child: IndexedStack(
+            sizing: StackFit.expand,
+            index: _tab,
+            children: [
+              MiListaTab(usuarioId: yo),
+              EvaluarmeTab(yo: yo, pareja: pareja),
+            ],
+          ),
         ),
       ],
     );

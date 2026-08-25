@@ -12,7 +12,12 @@ import '../../data/repositories/items_repository.dart';
 
 class InicioScreen extends StatelessWidget {
   final ValueChanged<int> onVerSeccion;
-  const InicioScreen({super.key, required this.onVerSeccion});
+  final VoidCallback onEvaluarAhora;
+  const InicioScreen({
+    super.key,
+    required this.onVerSeccion,
+    required this.onEvaluarAhora,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +56,7 @@ class InicioScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          if (SemanaUtils.esHoySabado()) _BannerSabado(onTap: () => onVerSeccion(1)),
+          if (SemanaUtils.esHoySabado()) _BannerSabado(onTap: onEvaluarAhora),
           if (SemanaUtils.esHoySabado()) const SizedBox(height: 16),
           _TarjetaProgresoResumen(
             titulo: 'Tu semana',
@@ -149,7 +154,7 @@ class _BannerSabado extends StatelessWidget {
   }
 }
 
-class _TarjetaProgresoResumen extends StatelessWidget {
+class _TarjetaProgresoResumen extends StatefulWidget {
   final String titulo;
   final String subtitulo;
   final String evaluadoPor;
@@ -165,17 +170,41 @@ class _TarjetaProgresoResumen extends StatelessWidget {
   });
 
   @override
+  State<_TarjetaProgresoResumen> createState() => _TarjetaProgresoResumenState();
+}
+
+class _TarjetaProgresoResumenState extends State<_TarjetaProgresoResumen> {
+  late final Stream<List<ItemLista>> _itemsStream;
+  late final Stream<List<Evaluacion>> _evalStream;
+
+  @override
+  void initState() {
+    super.initState();
+    final autorDeLista =
+        widget.evaluadoPor == kUsuarioHenry ? kUsuarioLoany : kUsuarioHenry;
+    // Se crea una sola vez: si se recreara en cada build(), StreamBuilder
+    // vería un Stream distinto cada vez y volvería a mostrar "cargando"
+    // aunque los datos ya estuvieran disponibles.
+    _itemsStream = ItemsRepository().observarListaDe(autorDeLista);
+    _evalStream = EvaluacionesRepository().observarPorSemanaYEvaluador(
+      widget.semanaId,
+      widget.evaluadoPor,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final itemsRepo = ItemsRepository();
-    final evalRepo = EvaluacionesRepository();
-    final autorDeLista = evaluadoPor == kUsuarioHenry ? kUsuarioLoany : kUsuarioHenry;
+    final titulo = widget.titulo;
+    final subtitulo = widget.subtitulo;
+    final evaluadoPor = widget.evaluadoPor;
+    final onTap = widget.onTap;
 
     return StreamBuilder<List<ItemLista>>(
-      stream: itemsRepo.observarListaDe(autorDeLista),
+      stream: _itemsStream,
       builder: (context, itemsSnap) {
         final items = (itemsSnap.data ?? []).where((i) => i.activo).toList();
         return StreamBuilder<List<Evaluacion>>(
-          stream: evalRepo.observarPorSemanaYEvaluador(semanaId, evaluadoPor),
+          stream: _evalStream,
           builder: (context, evalSnap) {
             final evals = evalSnap.data ?? [];
             final promedio = evals.isEmpty

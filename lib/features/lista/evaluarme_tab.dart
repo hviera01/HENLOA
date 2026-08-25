@@ -8,23 +8,43 @@ import '../../data/models/item.dart';
 import '../../data/repositories/evaluaciones_repository.dart';
 import '../../data/repositories/items_repository.dart';
 
-class EvaluarmeTab extends StatelessWidget {
+class EvaluarmeTab extends StatefulWidget {
   final String yo;
   final String pareja;
   const EvaluarmeTab({super.key, required this.yo, required this.pareja});
 
   @override
+  State<EvaluarmeTab> createState() => _EvaluarmeTabState();
+}
+
+class _EvaluarmeTabState extends State<EvaluarmeTab> {
+  final _evalRepo = EvaluacionesRepository();
+  late final Stream<List<ItemLista>> _itemsStream;
+  late final Stream<List<Evaluacion>> _evalStream;
+  late final String _semanaId;
+
+  @override
+  void initState() {
+    super.initState();
+    _semanaId = SemanaUtils.idSemanaActual();
+    // Streams creados una sola vez para no perder la suscripción (y volver a
+    // "cargando") en cada rebuild.
+    _itemsStream = ItemsRepository().observarListaDe(widget.pareja);
+    _evalStream = _evalRepo.observarPorSemanaYEvaluador(_semanaId, widget.yo);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final itemsRepo = ItemsRepository();
-    final evalRepo = EvaluacionesRepository();
-    final semanaId = SemanaUtils.idSemanaActual();
+    final yo = widget.yo;
+    final semanaId = _semanaId;
+    final evalRepo = _evalRepo;
 
     return StreamBuilder<List<ItemLista>>(
-      stream: itemsRepo.observarListaDe(pareja),
+      stream: _itemsStream,
       builder: (context, itemsSnap) {
         final items = (itemsSnap.data ?? []).where((i) => i.activo).toList();
         return StreamBuilder<List<Evaluacion>>(
-          stream: evalRepo.observarPorSemanaYEvaluador(semanaId, yo),
+          stream: _evalStream,
           builder: (context, evalSnap) {
             final evaluaciones = {
               for (final e in evalSnap.data ?? <Evaluacion>[]) e.itemId: e,
