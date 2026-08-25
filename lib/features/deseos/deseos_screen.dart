@@ -208,53 +208,64 @@ class _FilaDeseo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: deseo.cumplido ? AppColors.oro.withValues(alpha: 0.08) : AppColors.tarjeta,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.trazo),
-      ),
-      child: Row(
-        children: [
-          if (puedeMarcar)
-            GestureDetector(
-              onTap: () => onMarcar(!deseo.cumplido),
-              child: Container(
-                width: 24,
-                height: 24,
-                margin: const EdgeInsets.only(right: 12),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: deseo.cumplido ? AppColors.oro : Colors.transparent,
-                  border: Border.all(color: AppColors.oro, width: 1.6),
-                ),
-                child: deseo.cumplido
-                    ? const Icon(Icons.check, size: 15, color: Colors.white)
-                    : null,
-              ),
-            )
-          else if (deseo.cumplido)
-            const Padding(
-              padding: EdgeInsets.only(right: 10),
-              child: Icon(Icons.favorite, size: 16, color: AppColors.oro),
-            ),
-          Expanded(
-            child: Text(
-              deseo.texto,
-              style: TextStyle(
-                fontSize: 14,
-                decoration: deseo.cumplido ? TextDecoration.lineThrough : null,
-                color: deseo.cumplido ? AppColors.tintaSuave : AppColors.tintaFuerte,
-              ),
+    final cumplido = deseo.cumplido;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: puedeMarcar ? () => onMarcar(!cumplido) : null,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(6, 14, 8, 14),
+          decoration: BoxDecoration(
+            color: cumplido ? AppColors.oro.withValues(alpha: 0.09) : AppColors.tarjeta,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: cumplido ? AppColors.oro.withValues(alpha: 0.5) : AppColors.trazo,
             ),
           ),
-          if (puedeEliminar)
-            IconButton(
-              icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.tintaSuave),
-              onPressed: onEliminar,
-            ),
-        ],
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(width: 8),
+              Container(
+                width: 30,
+                height: 30,
+                margin: const EdgeInsets.only(top: 1),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: cumplido ? AppColors.oro : AppColors.oro.withValues(alpha: 0.12),
+                ),
+                child: Icon(
+                  cumplido ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  size: 15,
+                  color: cumplido ? Colors.white : AppColors.oro,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    deseo.texto,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      height: 1.35,
+                      decoration: cumplido ? TextDecoration.lineThrough : null,
+                      decorationColor: AppColors.tintaSuave,
+                      color: cumplido ? AppColors.tintaSuave : AppColors.tintaFuerte,
+                    ),
+                  ),
+                ),
+              ),
+              if (puedeEliminar)
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.tintaSuave),
+                  onPressed: onEliminar,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
