@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // NOTA DE SEGURIDAD: esta app no usa Firebase Authentication, el acceso
+    // se controla con un código de 4 dígitos dentro de la app. Reglas
+    // permisivas a propósito (igual que el resto de apps de la familia).
+
+    match /items/{idItem} {
+      allow read, write: if true;
+    }
+
+    match /evaluaciones/{idEvaluacion} {
+      allow read, write: if true;
+    }
+
+    match /deseos/{idDeseo} {
+      allow read, write: if true;
+    }
+
+    match /cartas/{idCarta} {
+      allow read, write: if true;
+    }
+  }
+}

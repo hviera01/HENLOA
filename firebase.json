@@ -1,0 +1,16 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "henloa",
+          "configurations": { "web": "1:360305228670:web:f458343375e969b556912f" }
+        }
+      }
+    }
+  }
+}
