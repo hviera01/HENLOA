@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/session/session.dart';
 import '../../core/session/session_scope.dart';
@@ -112,33 +113,43 @@ class _DeseosScreenState extends State<DeseosScreen> {
               final deseos = snap.data ?? [];
               return Stack(
                 children: [
-                  ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                    children: [
-                      if (deseos.isEmpty && snap.connectionState != ConnectionState.waiting)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 40),
-                          child: Center(
-                            child: Text(
-                              esMio ? 'Todavía no agregás deseos.' : 'Todavía no hay antojos por acá.',
-                              style: const TextStyle(color: AppColors.tintaSuave),
-                            ),
-                          ),
-                        ),
-                      ...deseos.map(
-                        (d) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _FilaDeseo(
-                            deseo: d,
-                            puedeMarcar: !esMio,
-                            puedeEliminar: esMio,
-                            onMarcar: (v) => _repo.marcarCumplido(d.id, v),
-                            onEliminar: () => _repo.eliminar(d.id),
-                          ),
+                  if (deseos.isEmpty && snap.connectionState != ConnectionState.waiting)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Center(
+                        child: Text(
+                          esMio ? 'Todavía no agregás deseos.' : 'Todavía no hay antojos por acá.',
+                          style: const TextStyle(color: AppColors.tintaSuave),
                         ),
                       ),
-                    ],
-                  ),
+                    )
+                  else
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const espacio = 14.0;
+                        final anchoTarjeta = (constraints.maxWidth - espacio) / 2;
+                        return SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(20, 6, 20, 100),
+                          child: Wrap(
+                            spacing: espacio,
+                            runSpacing: espacio,
+                            children: deseos.asMap().entries.map((entry) {
+                              return SizedBox(
+                                width: anchoTarjeta,
+                                child: _TarjetaDeseo(
+                                  indice: entry.key,
+                                  deseo: entry.value,
+                                  puedeMarcar: !esMio,
+                                  puedeEliminar: esMio,
+                                  onMarcar: (v) => _repo.marcarCumplido(entry.value.id, v),
+                                  onEliminar: () => _repo.eliminar(entry.value.id),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        );
+                      },
+                    ),
                   if (esMio)
                     Positioned(
                       right: 8,
@@ -191,14 +202,24 @@ class _Tab extends StatelessWidget {
   }
 }
 
-class _FilaDeseo extends StatelessWidget {
+/// Paleta de "papelitos" pastel — se turnan según el índice para que el
+/// tablero de deseos no se vea repetitivo.
+const _tonosNota = [
+  (fondo: Color(0xFFF6E4D9), cinta: AppColors.terracota),
+  (fondo: Color(0xFFF3E6D3), cinta: AppColors.oro),
+  (fondo: Color(0xFFEFE0E3), cinta: AppColors.vino),
+];
+
+class _TarjetaDeseo extends StatelessWidget {
+  final int indice;
   final Deseo deseo;
   final bool puedeMarcar;
   final bool puedeEliminar;
   final ValueChanged<bool> onMarcar;
   final VoidCallback onEliminar;
 
-  const _FilaDeseo({
+  const _TarjetaDeseo({
+    required this.indice,
     required this.deseo,
     required this.puedeMarcar,
     required this.puedeEliminar,
@@ -209,61 +230,106 @@ class _FilaDeseo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cumplido = deseo.cumplido;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: puedeMarcar ? () => onMarcar(!cumplido) : null,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(6, 14, 8, 14),
-          decoration: BoxDecoration(
-            color: cumplido ? AppColors.oro.withValues(alpha: 0.09) : AppColors.tarjeta,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: cumplido ? AppColors.oro.withValues(alpha: 0.5) : AppColors.trazo,
+    final tono = _tonosNota[indice % _tonosNota.length];
+    final inclinacion = (indice.isEven ? -1 : 1) * (2.2 + (indice % 3) * 0.6);
+    // Radios asimétricos y distintos por tarjeta: rompe la sensación de
+    // "caja cuadrada" y da un aire más de papelito pegado a mano.
+    final radios = indice.isEven
+        ? const BorderRadius.only(
+            topLeft: Radius.circular(6),
+            topRight: Radius.circular(30),
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          )
+        : const BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(6),
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          );
+
+    return Transform.rotate(
+      angle: inclinacion * 0.0174533,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: radios,
+          onTap: puedeMarcar ? () => onMarcar(!cumplido) : null,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 22, 14, 14),
+            constraints: const BoxConstraints(minHeight: 108),
+            decoration: BoxDecoration(
+              color: cumplido ? tono.fondo.withValues(alpha: 0.55) : tono.fondo,
+              borderRadius: radios,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.tintaFuerte.withValues(alpha: 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(width: 8),
-              Container(
-                width: 30,
-                height: 30,
-                margin: const EdgeInsets.only(top: 1),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: cumplido ? AppColors.oro : AppColors.oro.withValues(alpha: 0.12),
-                ),
-                child: Icon(
-                  cumplido ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                  size: 15,
-                  color: cumplido ? Colors.white : AppColors.oro,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    deseo.texto,
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      height: 1.35,
-                      decoration: cumplido ? TextDecoration.lineThrough : null,
-                      decorationColor: AppColors.tintaSuave,
-                      color: cumplido ? AppColors.tintaSuave : AppColors.tintaFuerte,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // "Cinta" pegada arriba, como si el papelito estuviera
+                // prendido a un corcho de deseos.
+                Positioned(
+                  top: -18,
+                  left: 18,
+                  child: Transform.rotate(
+                    angle: -0.12,
+                    child: Container(
+                      width: 34,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: tono.cinta.withValues(alpha: 0.55),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              if (puedeEliminar)
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.tintaSuave),
-                  onPressed: onEliminar,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      deseo.texto,
+                      style: GoogleFonts.fraunces(
+                        fontStyle: FontStyle.italic,
+                        fontSize: 15.5,
+                        height: 1.3,
+                        color: cumplido ? AppColors.tintaSuave : AppColors.tintaFuerte,
+                        decoration: cumplido ? TextDecoration.lineThrough : null,
+                        decorationColor: AppColors.tintaSuave,
+                        decorationThickness: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        if (puedeMarcar || cumplido)
+                          Icon(
+                            cumplido ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            size: 16,
+                            color: tono.cinta,
+                          ),
+                        const Spacer(),
+                        if (puedeEliminar)
+                          GestureDetector(
+                            onTap: onEliminar,
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 16,
+                              color: AppColors.tintaSuave.withValues(alpha: 0.7),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
