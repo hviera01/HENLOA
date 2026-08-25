@@ -43,7 +43,8 @@ class _MiListaTabState extends State<MiListaTab> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
               children: [
                 Text(
-                  'Cosas que esperás de tu pareja. Cada sábado ella/él se autoevalúa sobre esto.',
+                  'Cosas que esperás de tu pareja. Cada sábado vos la calificás según '
+                  'cómo le fue en cada punto.',
                   style: const TextStyle(color: AppColors.tintaSuave, fontSize: 12.5),
                 ),
                 const SizedBox(height: 16),

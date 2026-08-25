@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../core/session/session.dart';
 import '../../core/session/session_scope.dart';
 import '../../core/theme/app_colors.dart';
 import 'mi_lista_tab.dart';
-import 'evaluarme_tab.dart';
+import 'evaluar_tab.dart';
 
 class NuestraListaScreen extends StatefulWidget {
   final int tabInicial;
@@ -53,7 +54,7 @@ class _NuestraListaScreenState extends State<NuestraListaScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: _SegmentoTabs(
-            opciones: const ['Mi lista', 'Evaluarme'],
+            opciones: ['Mi lista', 'Evaluar a ${nombresUsuario[pareja]}'],
             indice: _tab,
             onCambiar: (i) => setState(() => _tab = i),
           ),
@@ -67,7 +68,7 @@ class _NuestraListaScreenState extends State<NuestraListaScreen> {
             index: _tab,
             children: [
               MiListaTab(usuarioId: yo),
-              EvaluarmeTab(yo: yo, pareja: pareja),
+              EvaluarTab(yo: yo, pareja: pareja, nombrePareja: nombresUsuario[pareja]!),
             ],
           ),
         ),

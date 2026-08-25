@@ -58,9 +58,11 @@ class _HomeShellState extends State<HomeShell> {
     final pareja = session.parejaActual!;
     final semanaId = SemanaUtils.idSemanaActual();
 
-    final items = await ItemsRepository().observarListaDe(pareja).first;
+    // Lo que YO tengo pendiente: calificar a mi pareja en los puntos de MI
+    // propia lista (la lista de lo que le pedí a ella/él).
+    final items = await ItemsRepository().observarListaDe(yo).first;
     final evals = await EvaluacionesRepository()
-        .observarPorSemanaYEvaluador(semanaId, yo)
+        .observarPorSemanaYEvaluador(semanaId, pareja)
         .first;
     final pendientes = items.where((i) => i.activo).length - evals.length;
     if (pendientes <= 0 || !mounted) return;
@@ -73,7 +75,7 @@ class _HomeShellState extends State<HomeShell> {
         title: const Text('¡Hoy es sábado!'),
         content: Text(
           'Te faltan $pendientes punto${pendientes == 1 ? '' : 's'} por calificar '
-          'de la lista de ${nombresUsuario[pareja]} esta semana.',
+          'sobre cómo le fue a ${nombresUsuario[pareja]} esta semana.',
         ),
         actions: [
           TextButton(

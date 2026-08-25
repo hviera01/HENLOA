@@ -60,7 +60,7 @@ class InicioScreen extends StatelessWidget {
           if (SemanaUtils.esHoySabado()) const SizedBox(height: 16),
           _TarjetaProgresoResumen(
             titulo: 'Tu semana',
-            subtitulo: 'Cómo te autoevaluaste',
+            subtitulo: 'Cómo te calificó ${nombresUsuario[pareja]}',
             evaluadoPor: yo,
             semanaId: semanaId,
             onTap: () => onVerSeccion(2),
@@ -68,7 +68,7 @@ class InicioScreen extends StatelessWidget {
           const SizedBox(height: 14),
           _TarjetaProgresoResumen(
             titulo: '${nombresUsuario[pareja]}',
-            subtitulo: 'Cómo se autoevaluó',
+            subtitulo: 'Cómo calificaste a ${nombresUsuario[pareja]}',
             evaluadoPor: pareja,
             semanaId: semanaId,
             onTap: () => onVerSeccion(2),
