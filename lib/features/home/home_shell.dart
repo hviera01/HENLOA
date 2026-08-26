@@ -37,7 +37,7 @@ class _HomeShellState extends State<HomeShell> {
   void _irAEvaluar() {
     setState(() {
       _indice = 1;
-      _listaTabSolicitado = 1;
+      _listaTabSolicitado = 2; // pestaña "Evaluar" dentro de Nuestra lista
     });
   }
 

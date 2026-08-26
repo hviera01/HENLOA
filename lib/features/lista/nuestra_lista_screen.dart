@@ -4,6 +4,7 @@ import '../../core/session/session.dart';
 import '../../core/session/session_scope.dart';
 import '../../core/theme/app_colors.dart';
 import 'mi_lista_tab.dart';
+import 'su_lista_tab.dart';
 import 'evaluar_tab.dart';
 
 class NuestraListaScreen extends StatefulWidget {
@@ -54,20 +55,21 @@ class _NuestraListaScreenState extends State<NuestraListaScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: _SegmentoTabs(
-            opciones: ['Mi lista', 'Evaluar a ${nombresUsuario[pareja]}'],
+            opciones: ['Mi lista', 'De ${nombresUsuario[pareja]}', 'Evaluar'],
             indice: _tab,
             onCambiar: (i) => setState(() => _tab = i),
           ),
         ),
         const SizedBox(height: 16),
         Expanded(
-          // IndexedStack: mantiene ambas pestañas montadas para no perder
+          // IndexedStack: mantiene las tres pestañas montadas para no perder
           // la suscripción a Firestore (y volver a "cargando") al alternar.
           child: IndexedStack(
             sizing: StackFit.expand,
             index: _tab,
             children: [
               MiListaTab(usuarioId: yo),
+              SuListaTab(usuarioId: pareja, nombre: nombresUsuario[pareja]!),
               EvaluarTab(yo: yo, pareja: pareja, nombrePareja: nombresUsuario[pareja]!),
             ],
           ),
